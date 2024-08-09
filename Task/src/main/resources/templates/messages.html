@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket with STOMP</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.0/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script>
+        var stompClient = null;
+
+        function connect() {
+            var socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function (frame) {
+                console.log('Connected: ' + frame);
+                stompClient.subscribe('/topic/taskUpdates', function (message) {
+                    showTaskUpdate(message.body);
+                });
+            });
+        }
+
+        function sendMessage() {
+            var taskInput = document.getElementById('taskInput');
+            var message = taskInput.value;
+            if (message.trim()) {
+                stompClient.send('/message/send', {}, message);
+                showTaskUpdate(message);
+                taskInput.value = '';
+                showTaskUpdate('Task submitted successfully');
+            }
+        }
+
+        function disconnect() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+            console.log("Disconnected");
+        }
+
+        function showTaskUpdate(message) {
+            var response = document.getElementById('response');
+            var p = document.createElement('p');
+            p.appendChild(document.createTextNode(message));
+            response.appendChild(p);
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            connect();
+        });
+    </script>
+</head>
+<body>
+<h1>WebSocket Messaging</h1>
+<div>
+    <input type="text" id="taskInput" placeholder="Enter task">
+    <button onclick="sendMessage()">Submit Task</button>
+    <button onclick="disconnect()">Disconnect</button>
+</div>
+<div id="response"></div>
+</body>
+</html>
